@@ -1,6 +1,6 @@
 variables:
     # app
-    APP_NAME: apav-one
+    APP_NAME: argocd-apav-one
     # docker
     DOCKER_VERSION: 19.03.1
 
