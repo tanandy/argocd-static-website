@@ -1,0 +1,78 @@
+variables:
+    # app
+    APP_NAME: apav-one
+    # docker
+    DOCKER_VERSION: 19.03.1
+
+
+# ==================================================
+# Jobs definition
+# ==================================================
+.docker_login: &docker_login
+  - '[ -z "$CI_JOB_TOKEN" ] && echo "Registry Password is not set or empty (or protected) in Secret Variables" && exit 1'
+  - '[ -z "gitlab-ci-token" ] && echo "Registry User is not set or empty (or protected) in Secret Variables" && exit 1'
+  - echo $CI_JOB_TOKEN | docker login $CI_REGISTRY --username gitlab-ci-token --password-stdin
+
+
+# ==================================================
+# Stages definition
+# ==================================================
+stages:
+  - docker-build-latest-website
+  - docker-build-tag-website
+
+
+# ==================================================
+# Stage: docker-build-latest-website
+# ==================================================
+docker-build-latest-website:
+    stage: docker-build-latest-website
+    tags:
+      - docker,shared
+    image: docker:$DOCKER_VERSION
+    services:
+      - docker:$DOCKER_VERSION-dind
+    script:
+        - *docker_login
+        - docker build --pull --tag $CI_REGISTRY/$CI_PROJECT_PATH/$APP_NAME:latest .
+        - docker push $CI_REGISTRY/$CI_PROJECT_PATH/$APP_NAME:latest
+    only:
+        - master
+    except:
+        changes:
+            - README.md
+            - .gitlab-ci.yml
+            - helm-argocd-website/**
+
+
+# ==================================================
+# Stage: docker-build-tag-website
+# ==================================================
+docker-build-tag-website:
+    stage: docker-build-tag-website
+    tags:
+      - docker,shared
+    image: docker:$DOCKER_VERSION
+    services:
+      - docker:$DOCKER_VERSION-dind
+    script:
+        - *docker_login
+        - docker build --pull --build-arg VERSION=$CI_COMMIT_REF_NAME --tag $CI_REGISTRY/$CI_PROJECT_PATH/$APP_NAME:$CI_COMMIT_REF_NAME .
+        - docker push $CI_REGISTRY/$CI_PROJECT_PATH/$APP_NAME:$CI_COMMIT_REF_NAME
+    only:
+        - tags
+
+
+# ==================================================
+# Stage: docker-deploy-latest-website
+# ==================================================
+#docker-deploy-latest-website:
+#    <<: *job_definition_docker
+#    stage: docker-deploy-latest-website
+#    script:
+#        - docker stop $APP_NAME || true
+#        - docker rm $APP_NAME || true
+#        - docker run --restart always --detach --name $APP_NAME --network proxy --label traefik.enable=true --label traefik.frontend.rule=Host:apav.one --label traefik.port=80 $CI_REGISTRY/$CI_PROJECT_PATH/$APP_NAME:$CI_COMMIT_REF_NAME
+#        - docker logout registry.gitlab.com
+#    only:
+#        - tags
