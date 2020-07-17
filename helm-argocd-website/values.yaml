@@ -5,15 +5,13 @@
 replicaCount: 1
 
 image:
-  repository: registry.gitlab.com/adrienpavone/my-website/apav-one
+  repository: registry.gitlab.com/adrienpavone/argocd-static-website/argocd-apav-one
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
-imagePullSecrets:
-  - name: my-website-cred
-nameOverride: "my-website-app"
-fullnameOverride: "my-website"
+nameOverride: "argocd-apav-one-app"
+fullnameOverride: "argocd-apav-one"
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -46,15 +44,14 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
   hosts:
-    - host: www.apav.one
+    - host: argocd.apav.one
       paths:
         - /
   tls:
     - secretName: apav.one-prod
       hosts:
-        - www.apav.one
+        - argocd.apav.one
 
 resources:
    limits:
